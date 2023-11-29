@@ -1,13 +1,19 @@
 import { Icon } from '@iconify/react';
-import { Box } from '@mui/material';
+import { Box, Drawer, useMediaQuery } from '@mui/material';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useDispatch } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { ApiError } from '../../lib/k8s/apiProxy';
 import Pod from '../../lib/k8s/pod';
 import { timeAgo } from '../../lib/util';
+import { setDetailDrawerOpen } from '../../redux/drawerModeSlice';
+import { useTypedSelector } from '../../redux/reducers/reducers';
 import { LightTooltip, Link, SimpleTableProps } from '../common';
 import { StatusLabel, StatusLabelProps } from '../common/Label';
 import ResourceListView from '../common/Resource/ResourceListView';
 import { ResourceTableProps } from '../common/Resource/ResourceTable';
+import PodDetails from './Details';
 
 export function makePodStatusLabel(pod: Pod) {
   const phase = pod.status.phase;
@@ -65,6 +71,7 @@ function getReadinessGatesStatus(pods: Pod) {
 }
 
 export interface PodListProps {
+  drawer?: boolean;
   pods: Pod[] | null;
   error: ApiError | null;
   hideColumns?: ('namespace' | 'restarts')[];
@@ -73,12 +80,81 @@ export interface PodListProps {
 }
 
 export function PodListRenderer(props: PodListProps) {
-  const { pods, error, hideColumns = [], reflectTableInURL = 'pods', noNamespaceFilter } = props;
+  const {
+    // NOTEZ: This may not be needed
+    // drawer,
+    pods,
+    error,
+    hideColumns = [],
+    reflectTableInURL = 'pods',
+    noNamespaceFilter,
+  } = props;
   const { t } = useTranslation(['glossary', 'translation']);
+
+  // USE THIS ---------------------------
+  // NOTEZ: Will need to use slices of state for both drwaerEnabled and drawerOpen for every list view
+  const drawerEnabled = useTypedSelector(state => state.drawerMode.isDetailDrawerEnabled);
+  const drawerOpen = useTypedSelector(state => state.drawerMode.isDetailDrawerOpen);
+  const dispatch = useDispatch();
+
+  const mediaQuerySize = useMediaQuery('(min-width: 1200px)');
+
+  // NOTEZ: This is how you get the current url which we need to mark each resource
+  // by making sure this resource marker is in the url it prevents multiple drtawers from opening as a stack
+  const location = window.location.pathname;
+  console.log('location: ', location);
+  const isPodsPage = location.includes('pods');
+
+  //  NOTEZ: This is how you get the cluster name from the url
+  const params: any = useParams();
+  console.log('params: ', params);
+  const cluster = params.cluster;
+
+  // NOTEZ: May need to clean this later but it works to refresh the drawer being opened or closed
+  useEffect(() => {
+    // dispatch(setDetailDrawerOpen(drawerSwitch))
+  }, [drawerOpen]);
+
+  function toggleDrawer() {
+    //  NOTEZ: dispatching the action to close the drawer which renders in real time
+    dispatch(setDetailDrawerOpen(!drawerOpen));
+
+    console.log('CLOSING DRAWER');
+
+    //  NOTEZ: This will need to be custom for each resource,
+    //  this allows the drawer to close and the url to update while not refreshing the page
+    const newUrl = `/c/${cluster}/pods`;
+    window.history.pushState({}, '', newUrl);
+  }
+  // ---------------------------
 
   function getDataCols() {
     const dataCols: ResourceTableProps['columns'] = [
-      'name',
+      // NOTEZ: replacing the name column with a custom column
+      // 'name',
+      {
+        id: 'name',
+        label: t('translation|Name'),
+        getter: (pod: Pod) => {
+          if (drawerEnabled) {
+            return (
+              <>
+                <Link kubeObject={pod} drawerEnabled={drawerEnabled} />
+              </>
+            );
+          }
+
+          return <Link kubeObject={pod} />;
+        },
+        sort: (n1: Pod, n2: Pod) => {
+          if (n1.metadata.name < n2.metadata.name) {
+            return -1;
+          } else if (n1.metadata.name > n2.metadata.name) {
+            return 1;
+          }
+          return 0;
+        },
+      },
       {
         id: 'ready',
         label: t('translation|Ready'),
@@ -207,22 +283,35 @@ export function PodListRenderer(props: PodListProps) {
   }
 
   return (
-    <ResourceListView
-      title={t('Pods')}
-      headerProps={{
-        noNamespaceFilter,
-      }}
-      errorMessage={Pod.getErrorMessage(error)}
-      columns={getDataCols()}
-      data={pods}
-      reflectInURL={reflectTableInURL}
-      id="headlamp-pods"
-    />
+    <>
+      <ResourceListView
+        title={t('Pods')}
+        headerProps={{
+          noNamespaceFilter,
+        }}
+        errorMessage={Pod.getErrorMessage(error)}
+        columns={getDataCols()}
+        data={pods}
+        reflectInURL={reflectTableInURL}
+        id="headlamp-pods"
+      />
+      {drawerOpen && mediaQuerySize && isPodsPage && (
+        <Drawer variant="temporary" anchor="right" open onClose={toggleDrawer}>
+          <Box width={800}>
+            <PodDetails />
+          </Box>
+        </Drawer>
+      )}
+      {/* 
+      <p>{`${drawerEnabled}`}</p>
+      <p>{`${drawerOpen}`}</p>
+      <p>{`${mediaQuerySize}`}</p> */}
+    </>
   );
 }
 
-export default function PodList() {
+export default function PodList(props: { drawer?: boolean }) {
   const [pods, error] = Pod.useList();
 
-  return <PodListRenderer pods={pods} error={error} reflectTableInURL />;
+  return <PodListRenderer drawer={props.drawer} pods={pods} error={error} reflectTableInURL />;
 }

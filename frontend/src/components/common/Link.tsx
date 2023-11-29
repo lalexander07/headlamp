@@ -1,8 +1,10 @@
 import MuiLink from '@mui/material/Link';
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { Link as RouterLink, useHistory } from 'react-router-dom';
 import { makeKubeObject } from '../../lib/k8s/cluster';
 import { createRouteURL, RouteURLProps } from '../../lib/router';
+import { setDetailDrawerOpen } from '../../redux/drawerModeSlice';
 import { LightTooltip } from './Tooltip';
 
 export interface LinkBaseProps {
@@ -21,6 +23,7 @@ export interface LinkProps extends LinkBaseProps {
   state?: {
     [prop: string]: any;
   };
+  drawerEnabled?: boolean;
 }
 
 export interface LinkObjectProps extends LinkBaseProps {
@@ -30,11 +33,35 @@ export interface LinkObjectProps extends LinkBaseProps {
 
 function PureLink(props: React.PropsWithChildren<LinkProps | LinkObjectProps>) {
   if ((props as LinkObjectProps).kubeObject) {
-    const { kubeObject, ...otherProps } = props as LinkObjectProps;
+    const { kubeObject, drawerEnabled, ...otherProps } = props as LinkObjectProps;
+
+    // const drawerOpen = useTypedSelector(state => state.drawerMode.isDetailDrawerOpen);
+    const dispatch = useDispatch();
+    const history = useHistory();
+
+    function drawerLinkHandler(event: any) {
+      event.preventDefault();
+      history.push(kubeObject.getDetailsLink() + '/drawer');
+      dispatch(setDetailDrawerOpen(true));
+    }
+
     return (
-      <MuiLink component={RouterLink} to={kubeObject.getDetailsLink()} {...otherProps}>
-        {props.children || kubeObject.getName()}
-      </MuiLink>
+      <>
+        {drawerEnabled === true ? (
+          <MuiLink
+            component={RouterLink}
+            to={kubeObject.getDetailsLink() + '/drawer'}
+            {...otherProps}
+            onClick={drawerLinkHandler}
+          >
+            {props.children || kubeObject.getName()}
+          </MuiLink>
+        ) : (
+          <MuiLink component={RouterLink} to={kubeObject.getDetailsLink()} {...otherProps}>
+            {props.children || kubeObject.getName()}
+          </MuiLink>
+        )}
+      </>
     );
   }
 

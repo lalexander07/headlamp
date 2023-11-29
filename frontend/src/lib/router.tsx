@@ -224,6 +224,12 @@ const defaultRoutes: {
     sidebar: 'Deployments',
     component: () => <WorkloadDetails workloadKind={Deployment} />,
   },
+  DeploymentDrawer: {
+    path: '/deployments/:namespace/:name/drawer',
+    exact: true,
+    sidebar: 'Deployments',
+    component: () => <DeploymentsList />,
+  },
   Job: {
     path: '/jobs/:namespace/:name',
     exact: true,
@@ -248,6 +254,12 @@ const defaultRoutes: {
     exact: true,
     sidebar: 'Pods',
     component: () => <PodDetails />,
+  },
+  PodDrawer: {
+    path: '/pods/:namespace/:name/drawer',
+    exact: true,
+    sidebar: 'Pods',
+    component: () => <PodList drawer />,
   },
   services: {
     path: '/services',
@@ -337,6 +349,13 @@ const defaultRoutes: {
   },
   ReplicaSets: {
     path: '/replicasets',
+    exact: true,
+    name: 'ReplicaSets',
+    sidebar: 'ReplicaSets',
+    component: () => <ReplicaSetList />,
+  },
+  ReplicaSetsDrawer: {
+    path: '/replicasets/:namespace/:name/drawer',
     exact: true,
     name: 'ReplicaSets',
     sidebar: 'ReplicaSets',

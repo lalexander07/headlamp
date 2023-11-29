@@ -37,6 +37,7 @@
   "Visible": "Visível",
   "Plugins": "Plugins",
   "Save & Apply": "Guardar & Aplicar",
+  "Drawer Mode": "",
   "Enter a value between {{ minRows }} and {{ maxRows }}.": "Introduza um valor entre {{ minRows }} e {{ maxRows }}.",
   "Custom row value": "Núm. de linhas personalizado",
   "Apply": "Aplicar",
