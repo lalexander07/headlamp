@@ -43,6 +43,10 @@ export enum HeadlampEventType {
   LIST_VIEW = 'headlamp.list-view',
   /** Events related to loading events for a resource. */
   OBJECT_EVENTS = 'headlamp.object-events',
+  /** Events related to loading owned pods for a resource. */
+  DETAILS_VIEW_OWNED_PODS = 'headlamp.details-view-owned-pod-resource',
+  /** Events related to loading owned jobs for a resource. */
+  DETAILS_VIEW_OWNED_JOBS = 'headlamp.details-view-owned-jobs',
 }
 
 /**

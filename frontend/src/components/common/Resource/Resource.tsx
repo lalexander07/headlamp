@@ -849,6 +849,19 @@ export function OwnedPodsSection(props: OwnedPodsSectionProps) {
   const [pods, error] = Pod.useList(queryData);
   const onlyOneNamespace = !!resource.metadata.namespace || resource.kind === 'Namespace';
 
+  const dispatchHeadlampEvent = useEventCallback();
+
+  React.useEffect(() => {
+    dispatchHeadlampEvent({
+      type: HeadlampEventType.DETAILS_VIEW_OWNED_PODS,
+      data: {
+        title: resource?.jsonData.kind,
+        resource: resource,
+        error: error || undefined,
+      },
+    });
+  }, []);
+
   return (
     <PodListRenderer
       hideColumns={hideColumns || onlyOneNamespace ? ['namespace'] : undefined}
